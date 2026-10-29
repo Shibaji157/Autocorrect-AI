@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NeuralType — AI Autocorrect Keyboard</title>
+  <meta name="description" content="Professional AI-powered autocorrect keyboard with N-gram next-word prediction, Damerau-Levenshtein correction, and real-time typing intelligence." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Animated Canvas Background -->
+  <canvas id="bgCanvas"></canvas>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">NeuralType</span>
+          <span class="brand-tagline">AI Autocorrect Engine v2.0</span>
+        </div>
+      </div>
+
+      <div class="header-center">
+        <div class="wpm-display">
+          <span class="wpm-value" id="wpmValue">0</span>
+          <span class="wpm-label">WPM</span>
+        </div>
+        <div class="header-divider"></div>
+        <div class="accuracy-display">
+          <span class="acc-value" id="accValue">100</span>
+          <span class="acc-label">% Accuracy</span>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <div class="header-status">
+          <div class="status-dot active" id="statusDot"></div>
+          <span class="status-label" id="statusLabel">Model Ready</span>
+        </div>
+        <div class="model-badge" id="modelBadge">3-gram</div>
+        <div class="header-actions">
+          <button class="action-btn" id="autocorrectToggle" title="Toggle Autocorrect" data-active="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <span>AC</span>
+          </button>
+          <button class="action-btn" id="copyBtn" title="Copy Text">
+            <svg viewBox="0 0 24 24" fill="none"><rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" stroke-width="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" stroke="currentColor" stroke-width="2"/></svg>
+          </button>
+          <button class="action-btn" id="downloadBtn" title="Export Text">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="action-btn" id="themeToggle" title="Toggle Theme">
+            <svg viewBox="0 0 24 24" fill="none" id="themeIcon"><circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </button>
+          <button class="action-btn danger" id="clearBtn" title="Clear All">
+            <svg viewBox="0 0 24 24" fill="none"><polyline points="3 6 5 6 21 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-main">
+
+    <!-- ═══ TOP ROW: Composer + Phrase Panel ═══ -->
+    <div class="top-row">
+
+      <!-- Text Composer -->
+      <section class="composer-section">
+        <div class="composer-card">
+          <div class="composer-toolbar">
+            <div class="toolbar-left">
+              <span class="toolbar-label">
+                <svg viewBox="0 0 24 24" fill="none" width="14" height="14"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                Composer
+              </span>
+              <div class="char-counter"><span id="charCount">0</span> chars</div>
+            </div>
+            <div class="toolbar-right">
+              <span class="ngram-label">Model:</span>
+              <div class="ngram-tabs">
+                <button class="ngram-tab" data-n="2">Bigram</button>
+                <button class="ngram-tab active" data-n="3">Trigram</button>
+                <button class="ngram-tab" data-n="4">4-gram</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Text Display -->
+          <div class="text-display" id="textDisplay">
+            <div class="placeholder-text" id="placeholderText">
+              <span class="ph-icon">⌨️</span>
+              <span>Start typing on the keyboard below or use your physical keyboard...</span>
+            </div>
+            <div class="text-content" id="textContent"></div>
+            <span class="cursor-blink" id="cursorBlink"></span>
+          </div>
+
+          <!-- Autocorrect notification bar -->
+          <div class="correction-bar" id="correctionBar">
+            <div class="correction-inner">
+              <div class="correction-badge">AUTO</div>
+              <svg viewBox="0 0 24 24" fill="none" width="14" height="14"><path d="M5 12l5 5L20 7" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span>Corrected <strong id="correctedFrom"></strong> → <strong id="correctedTo"></strong></span>
+              <button class="undo-btn" id="undoCorrection">
+                <svg viewBox="0 0 24 24" fill="none" width="12" height="12"><path d="M3 7v6h6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 17a9 9 0 00-9-9 9 9 0 00-6 2.3L3 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Undo
+              </button>
+            </div>
+          </div>
+
+          <!-- Prediction Strip -->
+          <div class="suggestion-strip">
+            <div class="strip-header">
+              <div class="suggestion-label">
+                <svg viewBox="0 0 24 24" fill="none" width="13" height="13"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                Next Word Predictions
+              </div>
+              <div class="strip-hint">Click to insert</div>
+            </div>
+            <div class="suggestions-container" id="suggestionsContainer">
+              <!-- filled by JS -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Smart Phrase Panel -->
+      <aside class="phrase-panel">
+        <div class="phrase-card">
+          <div class="phrase-header">
+            <span class="phrase-title">
+              <svg viewBox="0 0 24 24" fill="none" width="14" height="14"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              Quick Phrases
+            </span>
+          </div>
+          <div class="phrase-categories">
+            <button class="phrase-cat active" data-cat="greetings">Greetings</button>
+            <button class="phrase-cat" data-cat="tech">Tech</button>
+            <button class="phrase-cat" data-cat="business">Business</button>
+            <button class="phrase-cat" data-cat="casual">Casual</button>
+          </div>
+          <div class="phrase-list" id="phraseList">
+            <!-- filled by JS -->
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- ═══ VIRTUAL KEYBOARD ═══ -->
+    <section class="keyboard-section">
+      <div class="keyboard-wrapper">
+        <div class="keyboard-card" id="keyboardCard">
+          <!-- Row 1: Numbers -->
+          <div class="key-row">
+            <div class="key key-num" data-char="`" data-shift="~"><span class="key-main">`</span><span class="key-shift-char">~</span></div>
+            <div class="key key-num" data-char="1" data-shift="!"><span class="key-main">1</span><span class="key-shift-char">!</span></div>
+            <div class="key key-num" data-char="2" data-shift="@"><span class="key-main">2</span><span class="key-shift-char">@</span></div>
+            <div class="key key-num" data-char="3" data-shift="#"><span class="key-main">3</span><span class="key-shift-char">#</span></div>
+            <div class="key key-num" data-char="4" data-shift="$"><span class="key-main">4</span><span class="key-shift-char">$</span></div>
+            <div class="key key-num" data-char="5" data-shift="%"><span class="key-main">5</span><span class="key-shift-char">%</span></div>
+            <div class="key key-num" data-char="6" data-shift="^"><span class="key-main">6</span><span class="key-shift-char">^</span></div>
+            <div class="key key-num" data-char="7" data-shift="&amp;"><span class="key-main">7</span><span class="key-shift-char">&amp;</span></div>
+            <div class="key key-num" data-char="8" data-shift="*"><span class="key-main">8</span><span class="key-shift-char">*</span></div>
+            <div class="key key-num" data-char="9" data-shift="("><span class="key-main">9</span><span class="key-shift-char">(</span></div>
+            <div class="key key-num" data-char="0" data-shift=")"><span class="key-main">0</span><span class="key-shift-char">)</span></div>
+            <div class="key key-num" data-char="-" data-shift="_"><span class="key-main">-</span><span class="key-shift-char">_</span></div>
+            <div class="key key-num" data-char="=" data-shift="+"><span class="key-main">=</span><span class="key-shift-char">+</span></div>
+            <div class="key key-backspace" id="backspaceKey">
+              <svg viewBox="0 0 24 24" fill="none" width="18" height="18"><path d="M21 4H8l-7 8 7 8h13a2 2 0 002-2V6a2 2 0 00-2-2z" stroke="currentColor" stroke-width="2"/><line x1="18" y1="9" x2="12" y2="15" stroke="currentColor" stroke-width="2"/><line x1="12" y1="9" x2="18" y2="15" stroke="currentColor" stroke-width="2"/></svg>
+            </div>
+          </div>
+          <!-- Row 2: QWERTY -->
+          <div class="key-row">
+            <div class="key key-tab">Tab</div>
+            <div class="key key-letter" data-char="q"><span class="key-main">Q</span></div>
+            <div class="key key-letter" data-char="w"><span class="key-main">W</span></div>
+            <div class="key key-letter" data-char="e"><span class="key-main">E</span></div>
+            <div class="key key-letter" data-char="r"><span class="key-main">R</span></div>
+            <div class="key key-letter" data-char="t"><span class="key-main">T</span></div>
+            <div class="key key-letter" data-char="y"><span class="key-main">Y</span></div>
+            <div class="key key-letter" data-char="u"><span class="key-main">U</span></div>
+            <div class="key key-letter" data-char="i"><span class="key-main">I</span></div>
+            <div class="key key-letter" data-char="o"><span class="key-main">O</span></div>
+            <div class="key key-letter" data-char="p"><span class="key-main">P</span></div>
+            <div class="key key-sym" data-char="[" data-shift="{"><span class="key-main">[</span><span class="key-shift-char">{</span></div>
+            <div class="key key-sym" data-char="]" data-shift="}"><span class="key-main">]</span><span class="key-shift-char">}</span></div>
+            <div class="key key-sym key-wide" data-char="\" data-shift="|"><span class="key-main">\</span><span class="key-shift-char">|</span></div>
+          </div>
+          <!-- Row 3: ASDF -->
+          <div class="key-row">
+            <div class="key key-caps" id="capsKey">
+              <span>Caps</span>
+              <div class="caps-indicator" id="capsIndicator"></div>
+            </div>
+            <div class="key key-letter" data-char="a"><span class="key-main">A</span></div>
+            <div class="key key-letter" data-char="s"><span class="key-main">S</span></div>
+            <div class="key key-letter" data-char="d"><span class="key-main">D</span></div>
+            <div class="key key-letter" data-char="f"><span class="key-main">F</span></div>
+            <div class="key key-letter" data-char="g"><span class="key-main">G</span></div>
+            <div class="key key-letter" data-char="h"><span class="key-main">H</span></div>
+            <div class="key key-letter" data-char="j"><span class="key-main">J</span></div>
+            <div class="key key-letter" data-char="k"><span class="key-main">K</span></div>
+            <div class="key key-letter" data-char="l"><span class="key-main">L</span></div>
+            <div class="key key-sym" data-char=";" data-shift=":"><span class="key-main">;</span><span class="key-shift-char">:</span></div>
+            <div class="key key-sym" data-char="'" data-shift='"'><span class="key-main">'</span><span class="key-shift-char">"</span></div>
+            <div class="key key-enter" id="enterKey">↵ Enter</div>
+          </div>
+          <!-- Row 4: ZXCV -->
+          <div class="key-row">
+            <div class="key key-shift" id="shiftLeft">⇧ Shift</div>
+            <div class="key key-letter" data-char="z"><span class="key-main">Z</span></div>
+            <div class="key key-letter" data-char="x"><span class="key-main">X</span></div>
+            <div class="key key-letter" data-char="c"><span class="key-main">C</span></div>
+            <div class="key key-letter" data-char="v"><span class="key-main">V</span></div>
+            <div class="key key-letter" data-char="b"><span class="key-main">B</span></div>
+            <div class="key key-letter" data-char="n"><span class="key-main">N</span></div>
+            <div class="key key-letter" data-char="m"><span class="key-main">M</span></div>
+            <div class="key key-sym" data-char="," data-shift="<"><span class="key-main">,</span><span class="key-shift-char">&lt;</span></div>
+            <div class="key key-sym" data-char="." data-shift=">"><span class="key-main">.</span><span class="key-shift-char">&gt;</span></div>
+            <div class="key key-sym" data-char="/" data-shift="?"><span class="key-main">/</span><span class="key-shift-char">?</span></div>
+            <div class="key key-shift" id="shiftRight">⇧ Shift</div>
+          </div>
+          <!-- Row 5: Space -->
+          <div class="key-row key-row-space">
+            <div class="key key-fn">Ctrl</div>
+            <div class="key key-fn">⊞ Win</div>
+            <div class="key key-fn">Alt</div>
+            <div class="key key-space" id="spaceKey">
+              <span class="space-label">Space</span>
+              <div class="space-glow"></div>
+            </div>
+            <div class="key key-fn">Alt</div>
+            <div class="key key-fn">Menu</div>
+            <div class="key key-fn">Ctrl</div>
+          </div>
+        </div>
+
+        <!-- Keyboard bottom bar -->
+        <div class="keyboard-footer">
+          <div class="kf-item">
+            <kbd>Physical keyboard</kbd> works too
+          </div>
+          <div class="kf-item">
+            <kbd>Space</kbd> triggers autocorrect
+          </div>
+          <div class="kf-item" id="heatmapToggleWrap">
+            <button class="kf-btn" id="heatmapToggle">🔥 Heatmap: OFF</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ STATS & VISUALIZATION ═══ -->
+    <section class="stats-section">
+
+      <!-- Stat Cards -->
+      <div class="stats-grid">
+        <div class="stat-card" id="sc-words">
+          <div class="stat-icon purple">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M12 20h9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value" id="wordCount">0</div>
+            <div class="stat-label">Words Typed</div>
+          </div>
+          <div class="stat-sparkline" id="sparkWords"></div>
+        </div>
+        <div class="stat-card" id="sc-corrections">
+          <div class="stat-icon green">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value" id="correctionCount">0</div>
+            <div class="stat-label">Autocorrections</div>
+          </div>
+          <div class="stat-sparkline" id="sparkCorrections"></div>
+        </div>
+        <div class="stat-card" id="sc-suggestions">
+          <div class="stat-icon blue">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value" id="suggestionCount">0</div>
+            <div class="stat-label">Suggestions Used</div>
+          </div>
+          <div class="stat-sparkline" id="sparkSuggestions"></div>
+        </div>
+        <div class="stat-card" id="sc-wpm">
+          <div class="stat-icon amber">
+            <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><polyline points="12 6 12 12 16 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value" id="wpmStat">0</div>
+            <div class="stat-label">Words/Minute</div>
+          </div>
+          <div class="stat-sparkline" id="sparkWpm"></div>
+        </div>
+      </div>
+
+      <!-- Bottom Row: Context Viz + Corpus Info -->
+      <div class="bottom-panels">
+
+        <!-- N-gram Prediction Visualization -->
+        <div class="ngram-viz-card">
+          <div class="viz-header">
+            <div class="viz-title">
+              <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              N-gram Context Window
+            </div>
+            <div class="viz-pill" id="modelPill">Trigram</div>
+          </div>
+
+          <div class="ngram-context" id="ngramContext">
+            <div class="context-empty">
+              <div class="empty-animation">
+                <div class="pulse-ring"></div>
+                <svg viewBox="0 0 24 24" fill="none" width="28" height="28"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </div>
+              <p>Start typing to see AI prediction context</p>
+            </div>
+          </div>
+
+          <div class="predictions-chart" id="predictionsChart">
+            <div class="chart-title">Prediction Probability Distribution</div>
+            <div class="chart-bars" id="chartBars"></div>
+          </div>
+        </div>
+
+        <!-- Model & Corpus Info -->
+        <div class="corpus-card">
+          <div class="corpus-header">
+            <h3>Model Statistics</h3>
+            <div class="corpus-badge" id="trainingStatus">Training...</div>
+          </div>
+          <div class="corpus-stats">
+            <div class="corpus-stat">
+              <span class="corpus-stat-val" id="corpusVocab">—</span>
+              <span class="corpus-stat-label">Vocabulary</span>
+            </div>
+            <div class="corpus-stat">
+              <span class="corpus-stat-val" id="corpusBigrams">—</span>
+              <span class="corpus-stat-label">Bigrams</span>
+            </div>
+            <div class="corpus-stat">
+              <span class="corpus-stat-val" id="corpusTrigrams">—</span>
+              <span class="corpus-stat-label">Trigrams</span>
+            </div>
+            <div class="corpus-stat">
+              <span class="corpus-stat-val" id="corpusTokens">—</span>
+              <span class="corpus-stat-label">Tokens</span>
+            </div>
+          </div>
+          <div class="corpus-progress">
+            <div class="progress-label">Load</div>
+            <div class="progress-bar-wrap">
+              <div class="progress-bar" id="modelLoadBar" style="width:0%"></div>
+            </div>
+            <span class="progress-pct" id="modelLoadPct">0%</span>
+          </div>
+
+          <!-- Top Words typed -->
+          <div class="top-words-section">
+            <div class="tw-title">Most Typed Words</div>
+            <div class="top-words" id="topWords">
+              <span class="tw-empty">No words yet...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Toast -->
+  <div class="toast" id="toast">
+    <span class="toast-icon" id="toastIcon">✅</span>
+    <span class="toast-msg" id="toastMsg"></span>
+  </div>
+
+  <script src="ngram-model.js"></script>
+  <script src="autocorrect.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
