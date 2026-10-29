@@ -2,6 +2,10 @@
 
 A browser-based typing keyboard with real-time autocorrection, next-word predictions, and typing statistics. It runs entirely in the browser; no build step or package installation is required.
 
+## Live Demo
+
+Try NeuralType here: [https://autocorrect-keyboard-two.vercel.app/](https://autocorrect-keyboard-two.vercel.app/)
+
 ## Features
 
 - Corrects common spelling mistakes as you finish a word.
